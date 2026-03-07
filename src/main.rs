@@ -54,7 +54,7 @@ fn init_logger() {
 
 fn main() -> Result<()> {
     init_logger();
-    
+
     let config = Config::load()?;
 
     let args: Vec<_> = std::env::args().collect();
