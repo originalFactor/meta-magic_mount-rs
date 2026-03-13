@@ -3,7 +3,7 @@
 
 use std::{
     path::Path,
-    sync::{LazyLock, Mutex, OnceLock, atomic::AtomicBool},
+    sync::{LazyLock, Mutex, atomic::AtomicBool},
 };
 
 use ksu::TryUmount;

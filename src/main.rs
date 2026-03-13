@@ -13,10 +13,7 @@ use std::path::Path;
 
 use anyhow::Result;
 use mimalloc::MiMalloc;
-use rustix::{
-    mount::{MountFlags, mount},
-    path::Arg,
-};
+use rustix::mount::{MountFlags, mount};
 
 use crate::{config::Config, defs::MODULE_PATH};
 

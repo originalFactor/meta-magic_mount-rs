@@ -93,7 +93,7 @@ where
 }
 
 pub fn update_desc(files: u32, symbols: u32) {
-    let text = format!("😋 mounted files: {files}, mounted symbols: {symbols}",);
+    let text = format!("😋 mounted files: {files}, mounted symbols: {symbols}");
 
     if ksucalls::KSU.load(std::sync::atomic::Ordering::Relaxed) {
         let result = Command::new("ksud")
@@ -119,7 +119,7 @@ pub fn update_desc(files: u32, symbols: u32) {
         let buf = BufReader::new(&f);
         let new: Vec<String> = buf
             .lines()
-            .flatten()
+            .map_while(Result::ok)
             .map(|l| {
                 if l.starts_with("description") {
                     format!("description={text}")
