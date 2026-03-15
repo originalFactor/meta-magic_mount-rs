@@ -354,7 +354,12 @@ where
         let mounted_symbols = MOUNTDED_SYMBOLS_FILES.load(std::sync::atomic::Ordering::Relaxed);
         let mounted_files = MOUNTDED_FILES.load(std::sync::atomic::Ordering::Relaxed);
         log::info!("mounted files: {mounted_files}, mounted symlinks: {mounted_symbols}");
-        crate::utils::update_desc(mounted_files, mounted_symbols)?;
+        crate::utils::update_desc(
+            mounted_files,
+            mounted_symbols,
+            #[cfg(any(target_os = "linux", target_os = "android"))]
+            umount,
+        )?;
         ret
     } else {
         log::info!("no modules to mount, skipping!");

@@ -3,6 +3,8 @@
 
 pub const MODULE_PATH: &str = "/data/adb/modules/";
 
+pub const AP_VERSION: &str = "/data/adb/ap/version";
+
 // utils
 pub const SELINUX_XATTR: &str = "security.selinux";
 // magic_mount
