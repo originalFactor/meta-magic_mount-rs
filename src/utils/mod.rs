@@ -3,10 +3,9 @@
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod ksucalls;
-
 use std::{
     fs::{self, create_dir_all},
-    io::{BufRead, BufReader, Write},
+    io::Write,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -92,7 +91,7 @@ where
     }
 }
 
-pub fn update_desc(files: u32, symbols: u32) {
+pub fn update_desc(files: u32, symbols: u32) -> Result<()> {
     let text = format!("😋 mounted files: {files}, mounted symbols: {symbols}");
 
     if ksucalls::KSU.load(std::sync::atomic::Ordering::Relaxed) {
@@ -107,9 +106,11 @@ pub fn update_desc(files: u32, symbols: u32) {
         if let Ok(ret) = result
             && ret.status.success()
         {
-            return;
+            return Ok(());
         }
     }
+
+    let prop = fs::read_to_string(defs::MODULE_PROP)?;
 
     if let Ok(mut f) = fs::OpenOptions::new()
         .read(true)
@@ -117,15 +118,13 @@ pub fn update_desc(files: u32, symbols: u32) {
         .truncate(true)
         .open(defs::MODULE_PROP)
     {
-        let buf = BufReader::new(&f);
-        let new: Vec<String> = buf
+        let new: Vec<String> = prop
             .lines()
-            .map_while(Result::ok)
             .map(|l| {
                 if l.starts_with("description") {
                     format!("description={text}")
                 } else {
-                    l
+                    l.to_string()
                 }
             })
             .collect();
@@ -134,4 +133,6 @@ pub fn update_desc(files: u32, symbols: u32) {
             .map_err(|e| log::error!("Failed to update description: {e}"))
             .unwrap();
     }
+
+    Ok(())
 }
