@@ -1,13 +1,8 @@
-/**
- * Copyright 2025 Magic Mount-rs Authors
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 .bottom-nav {
   display: flex;
   background-color: var(--md-sys-color-surface-container);
   border-top: none;
-  padding-bottom: max(16px, var(--safe-area-inset-bottom, 0px));
+  box-shadow: none;
   padding-top: 16px;
   padding-left: 24px;
   padding-right: 24px;
@@ -16,7 +11,8 @@
   -ms-overflow-style: none;
   gap: 8px;
   z-index: 100;
-  transition: padding-bottom 0.3s ease;
+  transition: padding-bottom 0.3s cubic-bezier(0.2, 0, 0, 1);
+  will-change: padding-bottom;
 }
 .bottom-nav.fix-padding {
   padding-bottom: calc(max(16px, var(--safe-area-inset-bottom, 0px)) + 48px);
@@ -39,6 +35,9 @@
   cursor: pointer;
   border: none;
   padding: 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
 }
 .icon-container {
   width: 64px;
@@ -47,13 +46,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+  transition:
+    background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
+    width 0.2s;
+  pointer-events: none;
 }
-.nav-tab svg {
+md-icon svg {
   width: 24px;
   height: 24px;
   fill: currentColor;
-  transition: all 0.2s;
+  transition:
+    fill 0.2s,
+    transform 0.2s;
+}
+md-icon svg path {
+  transition: none !important;
 }
 .nav-tab.active .icon-container {
   background-color: var(--md-sys-color-secondary-container);
@@ -62,11 +69,11 @@
 .nav-tab.active {
   color: var(--md-sys-color-on-surface);
 }
-.nav-tab.active svg {
+.nav-tab.active md-icon svg {
   fill: var(--md-sys-color-on-secondary-container);
 }
 .nav-tab.active .label {
-  font-weight: 700;
+  font-weight: 600;
 }
 .nav-tab:active .icon-container {
   opacity: 0.8;

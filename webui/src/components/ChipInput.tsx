@@ -1,11 +1,8 @@
-/**
- * Copyright 2025 Magic Mount-rs Authors
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 import { For, Show, createSignal } from "solid-js";
-
+import "@material/web/chips/chip-set.js";
+import "@material/web/chips/input-chip.js";
+import "@material/web/icon/icon.js";
+import "@material/web/iconbutton/icon-button.js";
 import "./ChipInput.css";
 
 interface ChipInputProps {
@@ -52,58 +49,54 @@ export default function ChipInput(props: ChipInputProps) {
 
   return (
     <div
-      class="chip-input-container"
+      class="chip-input-wrapper"
       data-disable-tab-swipe="true"
       onTouchStart={stopSwipePropagation}
       onTouchMove={stopSwipePropagation}
       onTouchEnd={stopSwipePropagation}
       onTouchCancel={stopSwipePropagation}
     >
-      <For each={props.values}>
-        {(val, i) => (
-          <span class="chip">
-            {val}
-            <button
-              class="chip-remove"
-              onClick={() => removeChip(i())}
-              tabindex="-1"
-              aria-label={`Remove ${val}`}
-            >
-              <svg viewBox="0 0 24 24" width="14" height="14">
-                <path
-                  d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
-                  fill="currentColor"
-                />
+      <md-chip-set
+        style={{ "margin-bottom": props.values.length > 0 ? "8px" : "0px" }}
+      >
+        <For each={props.values}>
+          {(val, i) => (
+            <md-input-chip
+              label={val}
+              remove-only
+              on:remove={() => removeChip(i())}
+            ></md-input-chip>
+          )}
+        </For>
+      </md-chip-set>
+
+      <div class="input-row">
+        <input
+          type="text"
+          class="chip-input-field"
+          value={inputValue()}
+          onInput={(e) => setInputValue(e.currentTarget.value)}
+          onKeyDown={handleKeydown}
+          onBlur={addChip}
+          placeholder={props.placeholder ?? "Add item..."}
+          enterkeyhint="done"
+        />
+        <Show when={inputValue().trim().length > 0}>
+          <md-icon-button
+            onClick={addChip}
+            class="add-btn"
+            role="button"
+            tabIndex={0}
+            title="Add tag"
+          >
+            <md-icon>
+              <svg viewBox="0 0 24 24">
+                <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" />
               </svg>
-            </button>
-          </span>
-        )}
-      </For>
-      <input
-        type="text"
-        class="chip-input-field"
-        value={inputValue()}
-        onInput={(e) => setInputValue(e.currentTarget.value)}
-        onKeyDown={handleKeydown}
-        onBlur={addChip}
-        placeholder={props.placeholder ?? "Add item..."}
-        enterkeyhint="done"
-      />
-      <Show when={inputValue().trim().length > 0}>
-        <button
-          class="chip-add-btn"
-          onClick={addChip}
-          tabindex="-1"
-          aria-label="Add chip"
-        >
-          <svg viewBox="0 0 24 24" width="20" height="20">
-            <path
-              d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"
-              fill="currentColor"
-            />
-          </svg>
-        </button>
-      </Show>
+            </md-icon>
+          </md-icon-button>
+        </Show>
+      </div>
     </div>
   );
 }
