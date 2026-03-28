@@ -29,12 +29,12 @@ umount = false
 partitions = []
 ```
 
-| Field | Description |
-| ------------- | -------------- |
-| `mountsource` | Identifier for the Systemless mount source. Default is `"KSU"` to match KernelSU behavior. |
-| `umount` | Whether to attempt unmount (depends on KernelSU's umount). |
-| `partitions` | A list of specific partitions to perform Systemless operations on, e.g. `"mi_ext"`, `"my_stock"`. |
-| `tmpfsdir` | Temporary directory, default is `/debug_ramdisk`. This option is optional. |
+| Field         | Description                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------- |
+| `mountsource` | Identifier for the Systemless mount source. Default is `"KSU"` to match KernelSU behavior.        |
+| `umount`      | Whether to attempt unmount (depends on KernelSU's umount).                                        |
+| `partitions`  | A list of specific partitions to perform Systemless operations on, e.g. `"mi_ext"`, `"my_stock"`. |
+| `tmpfsdir`    | Temporary directory, default is `/debug_ramdisk`. This option is optional.                        |
 
 Configuration can also be performed via the Web UI (recommended).
 
@@ -44,11 +44,11 @@ Configuration can also be performed via the Web UI (recommended).
 
 Dependencies:
 
-* Rust nightly toolchain
-* Android NDK
-* `cargo-ndk`
-* Node.js / npm
-* `pnpm` and `vite` as dependency and frontend for webui
+- Rust nightly toolchain
+- Android NDK
+- `cargo-ndk`
+
+> The repository now ships prebuilt WebUI static assets, so building this module itself no longer requires Node.js / pnpm.
 
 Environment variables:
 
@@ -65,13 +65,13 @@ cargo xtask b
 
 Build artifacts will be located at:
 
-* `output/magic_mount_rs.zip`
+- `output/magic_mount_rs.zip`
 
 ## Acknowledgements
 
-* [5ec1cff/KernelSU](https://github.com/5ec1cff/KernelSU/blob/52f1f575ce2bd0ca46ebf644fd00a838af9f344e/userspace/ksud/src/magic_mount.rs): original implementation
-* [YuzakiKokuban](https://github.com/YuzakiKokuban) Webui modifications
+- [5ec1cff/KernelSU](https://github.com/5ec1cff/KernelSU/blob/52f1f575ce2bd0ca46ebf644fd00a838af9f344e/userspace/ksud/src/magic_mount.rs): original implementation
+- [YuzakiKokuban](https://github.com/YuzakiKokuban) Webui modifications
 
 ## License
 
-* [GPL-3.0 license](https://www.gnu.org/licenses/gpl-3.0.html)
+- [GPL-3.0 license](https://www.gnu.org/licenses/gpl-3.0.html)

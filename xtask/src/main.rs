@@ -9,7 +9,7 @@ use std::{
     process::Command,
 };
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use fs_extra::{dir, file};
 use serde::{Deserialize, Serialize};
 use zip::{CompressionMethod, write::FileOptions};
@@ -99,8 +99,6 @@ fn build() -> Result<()> {
     let _ = fs::remove_dir_all(&temp_dir);
     fs::create_dir_all(&temp_dir)?;
 
-    build_webui()?;
-
     let mut cargo = cargo_ndk();
     let args = vec!["build", "-Z", "build-std", "-r"];
 
@@ -119,6 +117,8 @@ fn build() -> Result<()> {
     if temp_dir.join(".gitignore").exists() {
         fs::remove_file(temp_dir.join(".gitignore")).unwrap();
     }
+
+    prepare_webroot(&temp_dir)?;
 
     let bin_path = temp_dir.join("bin");
 
@@ -203,14 +203,24 @@ fn cargo_ndk() -> Command {
     command
 }
 
-fn build_webui() -> Result<()> {
-    let pnpm = || {
-        let mut command = Command::new("pnpm");
-        command.current_dir("webui");
-        command
-    };
+fn prepare_webroot(temp_dir: &Path) -> Result<()> {
+    let webui_dir = Path::new("webui");
 
-    pnpm().args(["run", "build"]).spawn()?.wait()?;
+    if !webui_dir.join("index.html").exists() {
+        return Err(anyhow!(
+            "missing webui static bundle: webui/index.html not found"
+        ));
+    }
+
+    let webroot = temp_dir.join("webroot");
+    let _ = fs::remove_dir_all(&webroot);
+    fs::create_dir_all(&webroot)?;
+
+    dir::copy(
+        webui_dir,
+        &webroot,
+        &dir::CopyOptions::new().overwrite(true).content_only(true),
+    )?;
 
     Ok(())
 }

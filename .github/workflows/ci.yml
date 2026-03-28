@@ -1,25 +1,26 @@
 name: ci-build
 on:
+  workflow_dispatch:
   push:
     branches: ["master"]
     paths:
-      - 'src/**'
-      - 'Cargo.*'
-      - 'module/**'
-      - 'webui/**'
-      - 'xtask/**'
-      - 'build.rs'
-      - '.github/workflows/ci.yml'
+      - "src/**"
+      - "Cargo.*"
+      - "module/**"
+      - "webui/**"
+      - "xtask/**"
+      - "build.rs"
+      - ".github/workflows/ci.yml"
   pull_request:
     branches: ["master"]
     paths:
-      - 'src/**'
-      - 'Cargo.*'
-      - 'module/**'
-      - 'webui/**'
-      - 'xtask/**'
-      - 'build.rs'
-      - '.github/workflows/ci.yml'
+      - "src/**"
+      - "Cargo.*"
+      - "module/**"
+      - "webui/**"
+      - "xtask/**"
+      - "build.rs"
+      - ".github/workflows/ci.yml"
 env:
   CARGO_TERM_COLOR: always
 jobs:
@@ -49,18 +50,6 @@ jobs:
           toolchain: nightly
           targets: aarch64-linux-android
           components: rust-src
-      - name: Install pnpm
-        uses: pnpm/action-setup@v5.0.0
-        with:
-          run_install: false
-          package_json_file: webui/package.json
-      - name: Setup node
-        uses: actions/setup-node@v6.3.0
-        with:
-          node-version: "lts/*"
-          cache: pnpm
-          package-manager-cache: ${{ github.event_name == 'push' }}
-          cache-dependency-path: webui/pnpm-lock.yaml
       - uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name == 'push' }}
@@ -69,10 +58,10 @@ jobs:
           sudo apt update
           sudo apt install -y gcc-multilib
           cargo install cargo-ndk --locked
-      - name: Setup Webui deps
+      - name: Verify static WebUI bundle
         run: |
-          cd webui/
-          pnpm install --frozen-lockfile
+          test -f webui/index.html
+          test -d webui/_next
       - name: Build
         run: |
           export ANDROID_NDK_HOME=$(realpath ~/ndk_temp)
