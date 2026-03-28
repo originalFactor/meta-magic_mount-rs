@@ -116,7 +116,7 @@
 ### 4.1 贡献者列表
 
 - URL：
-  - `https://api.github.com/repos/Tools-cx-app/meta-magic_mount-rs/contributors`
+  - `https://api.github.com/repos/originalFactor/meta-magic_mount-rs/contributors`
 - 流程：
   1. 拉取基础贡献者列表。
   2. 过滤 bot（`type === "Bot"` 或 `login` 包含 `bot`）。

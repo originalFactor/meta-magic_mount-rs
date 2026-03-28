@@ -45,7 +45,7 @@ footer = """
 
 # Remote repository configuration
 [remote.github]
-owner = "Tools-cx-app"
+owner = "originalFactor"
 repo = "meta-magic_mount-rs"
 
 [git]

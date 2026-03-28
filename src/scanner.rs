@@ -28,6 +28,17 @@ pub struct ModuleInfo {
     skip: bool,
 }
 
+fn normalize_version(version: &str) -> String {
+    let mut chars = version.chars();
+    match chars.next() {
+        Some(prefix @ ('v' | 'V')) if chars.next().is_some_and(|ch| ch.is_ascii_digit()) => {
+            let stripped = version.strip_prefix(prefix).unwrap_or(version);
+            stripped.to_string()
+        }
+        _ => version.to_string(),
+    }
+}
+
 fn read_prop<P>(path: P) -> Result<HashMap<String, String>>
 where
     P: AsRef<Path>,
@@ -119,7 +130,7 @@ where
                 modules.push(ModuleInfo {
                     id: id.clone(),
                     name: name.clone(),
-                    version: version.clone(),
+                    version: normalize_version(version),
                     author: author.clone(),
                     description: description.clone(),
                     disabled,
