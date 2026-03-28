@@ -4,7 +4,7 @@
 use std::{
     collections::{HashMap, hash_map::Entry},
     fmt,
-    fs::{DirEntry, FileType},
+    fs::{self, DirEntry, FileType},
     os::unix::fs::{FileTypeExt, MetadataExt},
     path::{Path, PathBuf},
 };
@@ -13,7 +13,7 @@ use anyhow::Result;
 use extattr::lgetxattr;
 use rustix::path::Arg;
 
-use crate::defs::{REPLACE_DIR_FILE_NAME, REPLACE_DIR_XATTR};
+use crate::defs::{self, REPLACE_DIR_FILE_NAME, REPLACE_DIR_XATTR};
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum NodeFileType {
@@ -128,6 +128,20 @@ impl Node {
         path.as_ref().join(REPLACE_DIR_FILE_NAME).exists()
     }
 
+    fn dir_is_skip<P>(path: P) -> bool
+    where
+        P: AsRef<Path>,
+    {
+        if let Ok(f) = fs::read_to_string(defs::IGNORE_LIST_PATH)
+            && f.lines()
+                .any(|s| s == path.as_ref().to_str().unwrap_or_default())
+            {
+                return true;
+            }
+
+        false
+    }
+
     pub fn new_root<S>(name: S) -> Self
     where
         S: AsRef<str> + Into<String>,
@@ -155,8 +169,12 @@ impl Node {
             };
             if let Some(file_type) = file_type {
                 let replace = file_type == NodeFileType::Directory && Self::dir_is_replace(&path);
+                let skip = Self::dir_is_skip(&path);
                 if replace {
                     log::debug!("{} need replace", path.display());
+                }
+                if skip {
+                    log::debug!("{} was skip", path.display());
                 }
                 return Some(Self {
                     name: name.to_string(),
@@ -164,7 +182,7 @@ impl Node {
                     children: HashMap::default(),
                     module_path: Some(path),
                     replace,
-                    skip: false,
+                    skip,
                 });
             }
         }

@@ -3,6 +3,8 @@
 
 pub const MODULE_PATH: &str = "/data/adb/modules/";
 
+pub const IGNORE_LIST_PATH: &str = "/data/adb/magic_mount/ignore.list";
+
 pub const AP_VERSION: &str = "/data/adb/ap/version";
 
 // utils
