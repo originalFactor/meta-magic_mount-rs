@@ -6,6 +6,7 @@
 mod config;
 mod defs;
 mod magic_mount;
+mod misc;
 mod scanner;
 mod utils;
 
@@ -20,37 +21,8 @@ use crate::{config::Config, defs::MODULE_PATH};
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-fn init_logger() {
-    #[cfg(not(target_os = "android"))]
-    {
-        use std::io::Write;
-
-        let mut builder = env_logger::Builder::new();
-
-        builder.format(|buf, record| {
-            writeln!(
-                buf,
-                "[{}] [{}] {}",
-                record.level(),
-                record.target(),
-                record.args()
-            )
-        });
-        builder.filter_level(log::LevelFilter::Debug).init();
-    }
-
-    #[cfg(target_os = "android")]
-    {
-        android_logger::init_once(
-            android_logger::Config::default()
-                .with_max_level(log::LevelFilter::Debug)
-                .with_tag("MagicMount"),
-        );
-    }
-}
-
 fn main() -> Result<()> {
-    init_logger();
+    misc::pre_init();
 
     let config = Config::load()?;
 

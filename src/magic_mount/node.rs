@@ -4,16 +4,19 @@
 use std::{
     collections::{HashMap, hash_map::Entry},
     fmt,
-    fs::{self, DirEntry, FileType},
+    fs::{DirEntry, FileType},
     os::unix::fs::{FileTypeExt, MetadataExt},
     path::{Path, PathBuf},
+    sync::OnceLock,
 };
 
 use anyhow::Result;
 use extattr::lgetxattr;
 use rustix::path::Arg;
 
-use crate::defs::{self, REPLACE_DIR_FILE_NAME, REPLACE_DIR_XATTR};
+use crate::defs::{REPLACE_DIR_FILE_NAME, REPLACE_DIR_XATTR};
+
+pub static IGNORE_LIST: OnceLock<Option<String>> = OnceLock::new();
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum NodeFileType {
@@ -132,7 +135,8 @@ impl Node {
     where
         P: AsRef<Path>,
     {
-        if let Ok(f) = fs::read_to_string(defs::IGNORE_LIST_PATH)
+        let list = IGNORE_LIST.get().unwrap();
+        if let Some(f) = list
             && f.lines()
                 .any(|s| s == path.as_ref().to_str().unwrap_or_default())
         {
