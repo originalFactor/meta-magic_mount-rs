@@ -1,0 +1,4 @@
+[submodule "webui"]
+	path = webui
+	url = git@github.com:originalFactor/magic-mount-rs-webui.git
+	branch = dist
