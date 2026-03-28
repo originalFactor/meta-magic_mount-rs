@@ -1,6 +1,10 @@
 import type { JSX } from "solid-js";
 
-type BaseProps = JSX.HTMLAttributes<HTMLElement>;
+type BaseProps = JSX.HTMLAttributes<HTMLElement> & {
+  [key: `prop:${string}`]: any;
+  [key: `attr:${string}`]: any;
+  [key: `on:${string}`]: any;
+};
 
 interface MdDialogProps extends BaseProps {
   open?: boolean;
