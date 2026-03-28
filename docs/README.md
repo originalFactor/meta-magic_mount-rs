@@ -8,6 +8,9 @@
 
 </div>
 
+> [!NOTE]
+> 本仓库与上游的不同之处在于更改了 WebUI 实现为 [Magic Mount Rs WebUI](https://github.com/originalFactor/magic-mount-rs-webui)
+
 [telegram-badge]: https://img.shields.io/badge/Group-blue?style=for-the-badge&logo=telegram&label=Telegram
 [telegram-url]: https://t.me/mmrs_ci
 
