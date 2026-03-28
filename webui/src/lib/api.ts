@@ -19,6 +19,7 @@ let ksuExec: KsuExec | null = null;
 
 try {
   const ksu = await import("kernelsu").catch(() => null);
+
   ksuExec = ksu ? ksu.exec : null;
 } catch {}
 
@@ -26,6 +27,7 @@ const shouldUseMock = import.meta.env.DEV || !ksuExec;
 
 function isTrueValue(v: any): boolean {
   const s = String(v).trim().toLowerCase();
+
   return s === "1" || s === "true" || s === "yes" || s === "on";
 }
 
@@ -33,6 +35,7 @@ function stripQuotes(v: string): string {
   if (v.startsWith('"') && v.endsWith('"')) {
     return v.slice(1, -1);
   }
+
   return v;
 }
 
@@ -40,52 +43,67 @@ function parseKvConfig(text: string): MagicConfig {
   try {
     const result: MagicConfig = { ...DEFAULT_CONFIG };
     const lines = text.split("\n");
+
     for (let line of lines) {
       line = line.trim();
+
       if (!line || line.startsWith("#")) {
         continue;
       }
+
       const eqIndex = line.indexOf("=");
+
       if (eqIndex === -1) {
         continue;
       }
+
       const key = line.slice(0, eqIndex).trim();
       let value = line.slice(eqIndex + 1).trim();
+
       if (!key || !value) {
         continue;
       }
 
       if (value.startsWith("[") && value.endsWith("]")) {
         value = value.slice(1, -1);
+
         if (!value.trim()) {
           if (key === "partitions") {
             result.partitions = [];
           }
+
           continue;
         }
+
         const parts = value.split(",").map((s) => stripQuotes(s.trim()));
+
         if (key === "partitions") {
           result.partitions = parts;
         }
+
         continue;
       }
 
       const rawValue = value;
+
       value = stripQuotes(value);
 
       switch (key) {
         case "mountsource": {
           result.mountsource = value;
+
           break;
         }
         case "umount": {
           result.umount = isTrueValue(rawValue);
+
           break;
         }
       }
     }
+
     return result;
-  } catch (e) {
+  } catch {
     return DEFAULT_CONFIG;
   }
 }
@@ -96,7 +114,9 @@ function serializeKvConfig(cfg: MagicConfig): string {
 
   lines.push(`mountsource = ${q(cfg.mountsource)}`);
   lines.push(`umount = ${cfg.umount}`);
+
   const parts = cfg.partitions.map((p) => q(p)).join(", ");
+
   lines.push(`partitions = [${parts}]`);
 
   return lines.join("\n");
@@ -106,6 +126,7 @@ function formatBytes(bytes: number, decimals = 2): string {
   if (!+bytes) {
     return "0 B";
   }
+
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
   const sizes = ["B", "KB", "MB", "GB", "TB"];
@@ -117,26 +138,29 @@ function formatBytes(bytes: number, decimals = 2): string {
 const RealAPI: APIType = {
   loadConfig: async () => {
     let config: MagicConfig = { ...DEFAULT_CONFIG };
+
     try {
       const { errno, stdout } = await ksuExec!(
         `[ -f "${PATHS.CONFIG}" ] && cat "${PATHS.CONFIG}" || echo ""`,
       );
+
       if (errno === 0 && stdout.trim()) {
         config = parseKvConfig(stdout);
       }
-    } catch (e) {}
+    } catch {}
 
     try {
       const { errno, stdout } = await ksuExec!(
         `[ -f "/data/adb/magic_mount/ignore.list" ] && cat "/data/adb/magic_mount/ignore.list" || echo ""`,
       );
+
       if (errno === 0 && stdout) {
         config.ignoreList = stdout
           .split("\n")
           .map((s) => s.trim())
           .filter(Boolean);
       }
-    } catch (e) {}
+    } catch {}
 
     return config;
   },
@@ -155,7 +179,9 @@ ${ignoreContent}
 EOF_IGNORE
       chmod 644 "/data/adb/magic_mount/ignore.list"
     `;
+
     const { errno, stderr } = await ksuExec!(cmd);
+
     if (errno !== 0) {
       throw new Error(stderr);
     }
@@ -163,8 +189,10 @@ EOF_IGNORE
 
   scanModules: async () => {
     const cmd = "/data/adb/modules/magic_mount_rs/meta-mm scan --json";
+
     try {
       const { errno, stdout } = await ksuExec!(cmd);
+
       if (errno === 0 && stdout) {
         try {
           const rawModules = JSON.parse(stdout);
@@ -179,11 +207,11 @@ EOF_IGNORE
             mode: "magic",
             rules: { default_mode: "magic", paths: {} },
           }));
-        } catch (parseError) {
+        } catch {
           return [];
         }
       }
-    } catch (e) {}
+    } catch {}
 
     return [];
   },
@@ -191,8 +219,10 @@ EOF_IGNORE
   getStorageUsage: async () => {
     try {
       const { stdout } = await ksuExec!("df -k /data/adb/modules | tail -n 1");
+
       if (stdout) {
         const parts = stdout.split(/\s+/);
+
         if (parts.length >= 6) {
           const total = Number.parseInt(parts[1]) * 1024;
           const used = Number.parseInt(parts[2]) * 1024;
@@ -229,6 +259,7 @@ EOF_IGNORE
         mountBase: "/data/adb/modules",
         activeMounts: [] as string[],
       };
+
       if (errno === 0 && stdout) {
         for (const line of stdout.split("\n")) {
           if (line.startsWith("KERNEL:")) {
@@ -238,7 +269,9 @@ EOF_IGNORE
           }
         }
       }
+
       const m = await ksuExec!("ls -1 /data/adb/modules");
+
       if (m.errno === 0 && m.stdout) {
         info.activeMounts = m.stdout
           .split("\n")
@@ -266,8 +299,10 @@ EOF_IGNORE
 
   getVersion: async () => {
     const cmd = "/data/adb/modules/magic_mount_rs/meta-mm version";
+
     try {
       const { errno, stdout } = await ksuExec!(cmd);
+
       if (errno === 0 && stdout) {
         const res = JSON.parse(stdout);
 
@@ -281,11 +316,13 @@ EOF_IGNORE
   openLink: async (url) => {
     const safeUrl = url.replace(/"/g, '\\"');
     const cmd = `am start -a android.intent.action.VIEW -d "${safeUrl}"`;
+
     await ksuExec!(cmd);
   },
 
   reboot: async () => {
     const cmd = "svc power reboot || reboot";
+
     await ksuExec!(cmd);
   },
 };

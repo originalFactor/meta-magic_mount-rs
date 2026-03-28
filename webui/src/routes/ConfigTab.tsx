@@ -142,10 +142,10 @@ export default function ConfigTab() {
               </div>
               <div class="card-text">
                 <span class="card-title">
-                  {(store.L.config as any).ignoreList || "Ignore List"}
+                  {(store.L.config as any).ignoreList ?? "Ignore List"}
                 </span>
                 <span class="card-desc">
-                  {(store.L.config as any).ignoreListDesc ||
+                  {(store.L.config as any).ignoreListDesc ??
                     "Directories to exclude from mounting"}
                 </span>
               </div>
