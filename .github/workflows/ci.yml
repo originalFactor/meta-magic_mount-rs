@@ -7,6 +7,8 @@ on:
       - "src/**"
       - "Cargo.*"
       - "module/**"
+      - ".gitmodules"
+      - "webui"
       - "webui/**"
       - "xtask/**"
       - "build.rs"
@@ -17,6 +19,8 @@ on:
       - "src/**"
       - "Cargo.*"
       - "module/**"
+      - ".gitmodules"
+      - "webui"
       - "webui/**"
       - "xtask/**"
       - "build.rs"
@@ -30,6 +34,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          submodules: recursive
       - name: Cache NDK
         id: cache-ndk
         uses: actions/cache@v5
