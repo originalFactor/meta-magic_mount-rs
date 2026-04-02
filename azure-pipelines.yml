@@ -1,0 +1,77 @@
+name: $(Date:yyyyMMdd)$(Rev:.r) # 對應 github.run_number 的自動命名
+
+trigger: none # 對應 workflow_dispatch (手動觸發)
+pr: none
+
+variables:
+  CARGO_TERM_COLOR: always
+  # 定義傳遞給 Bot 的變數
+  COMMIT_MESSAGE: $(Build.SourceVersionMessage)
+  COMMIT_URL: "https://github.com/$(Build.Repository.Name)/commit/$(Build.SourceVersion)"
+
+jobs:
+- job: CI
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+    # 1. Checkout (預設會處理 submodules)
+    - checkout: self
+      submodules: recursive
+      fetchDepth: 0
+
+    # 2. Cache NDK
+    - task: Cache@2
+      inputs:
+        key: 'ndk | "$(Agent.OS)" | ndk_temp'
+        path: $(Pipeline.Workspace)/ndk_temp
+        cacheHitVar: CACHE_NDK_HIT
+      displayName: 'Cache NDK'
+
+    # 3. Setup NDK (如果 Cache 未命中)
+    - bash: |
+        ndk_url=$(wget -qO- https://github.com/android/ndk/releases/latest | grep -e 'https://dl.google.com/android/repository/android-ndk-.*-linux.zip' | sed -n 's/.*<a href="\([^"]*\)".*/\1/p')
+        wget -O ndk.zip $ndk_url -nv
+        mkdir -p $(Pipeline.Workspace)/ndk_temp
+        unzip ndk.zip -d $(Pipeline.Workspace)/ndk_temp 2>&1 > /dev/null
+        mv $(Pipeline.Workspace)/ndk_temp/*/* $(Pipeline.Workspace)/ndk_temp
+      condition: ne(variables.CACHE_NDK_HIT, 'true')
+      displayName: 'Setup NDK'
+
+    # 4. Setup Rust (Azure 沒有官方 Rust task, 通常使用 script 安裝)
+    - bash: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+        echo "##vso[task.prependpath]$HOME/.cargo/bin"
+      displayName: 'Install Rust Nightly'
+
+    - bash: |
+        rustup target add aarch64-linux-android
+        rustup component add rust-src
+      displayName: 'Add Rust Components'
+
+    # 5. Rust Cache (可以使用 Azure Pipeline 自帶的 Cache 模擬，或直接跳過，因為 Azure 內網下載通常很快)
+    # 這裡示範安裝 build dependencies
+    - bash: |
+        sudo apt update
+        sudo apt install -y gcc-multilib
+        cargo install cargo-ndk --locked
+      displayName: 'Install Build Dependencies'
+
+    # 6. Verify and Build
+    - bash: |
+        test -f webui/index.html
+        test -d webui/_next
+      displayName: 'Verify static WebUI bundle'
+
+    - bash: |
+        export ANDROID_NDK_HOME=$(realpath $(Pipeline.Workspace)/ndk_temp)
+        export ANDROID_NDK_ROOT=$ANDROID_NDK_HOME
+        cargo xtask b
+      displayName: 'Build'
+
+    # 7. Upload Artifact (對應 upload-artifact@v7)
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: 'output' # 注意：此處需根據你 xtask 實際生成的 zip 路徑調整
+        ArtifactName: 'meta-mm-$(Build.BuildId)'
+        publishLocation: 'Container'
+      displayName: 'Upload release version'
