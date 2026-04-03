@@ -1,4 +1,4 @@
-import { ParentProps } from "solid-js";
+import type { ParentProps } from "solid-js";
 import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import { Portal } from "solid-js/web";
 
@@ -11,7 +11,9 @@ export default function BottomActions(props: ParentProps) {
   onMount(() => {
     const pageEl = anchorRef?.closest(".swipe-page");
     const rootEl = anchorRef?.closest(".main-content");
-    if (!pageEl || !rootEl) return;
+    if (!pageEl || !rootEl) {
+      return;
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -28,37 +30,53 @@ export default function BottomActions(props: ParentProps) {
   });
 
   onMount(() => {
-    const viewport = window.visualViewport;
-    if (!viewport) return;
+    const maybeViewport = window.visualViewport;
+    if (!maybeViewport) {
+      return;
+    }
+
+    const visualViewport = maybeViewport;
 
     let rafId = 0;
-    const updateKeyboardInset = () => {
-      if (rafId) return;
+    function updateKeyboardInset() {
+      if (rafId) {
+        return;
+      }
+
       rafId = window.requestAnimationFrame(() => {
         rafId = 0;
         const inset = Math.max(
           0,
-          Math.round(window.innerHeight - viewport.height - viewport.offsetTop),
+          Math.round(
+            window.innerHeight -
+              visualViewport.height -
+              visualViewport.offsetTop,
+          ),
         );
         setKeyboardInset((prev) => (Math.abs(prev - inset) < 2 ? prev : inset));
       });
-    };
+    }
 
     updateKeyboardInset();
-    viewport.addEventListener("resize", updateKeyboardInset);
-    viewport.addEventListener("scroll", updateKeyboardInset);
+    visualViewport.addEventListener("resize", updateKeyboardInset);
+    visualViewport.addEventListener("scroll", updateKeyboardInset);
     window.addEventListener("orientationchange", updateKeyboardInset);
 
     onCleanup(() => {
-      if (rafId) window.cancelAnimationFrame(rafId);
-      viewport.removeEventListener("resize", updateKeyboardInset);
-      viewport.removeEventListener("scroll", updateKeyboardInset);
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+      }
+
+      visualViewport.removeEventListener("resize", updateKeyboardInset);
+      visualViewport.removeEventListener("scroll", updateKeyboardInset);
       window.removeEventListener("orientationchange", updateKeyboardInset);
     });
   });
 
   createEffect(() => {
-    if (!rootRef) return;
+    if (!rootRef) {
+      return;
+    }
 
     rootRef.style.setProperty(
       "--bottom-actions-keyboard-inset",

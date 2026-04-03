@@ -19,9 +19,7 @@
   width: calc(var(--tab-count, 4) * 100%);
   height: 100%;
   will-change: transform;
-  transform: translateX(
-    calc(var(--swipe-base, 0%) + var(--swipe-offset, 0px))
-  );
+  transform: translateX(calc(var(--swipe-base, 0%) + var(--swipe-offset, 0px)));
   transition: var(
     --swipe-transition,
     transform 0.4s cubic-bezier(0.2, 1, 0.2, 1)
@@ -38,7 +36,9 @@
   height: 100%;
   overflow-y: auto;
   padding: 16px;
-  padding-bottom: calc(16px + var(--bottom-nav-height, 88px) + var(--safe-area-inset-bottom, 0px));
+  padding-bottom: calc(
+    16px + var(--bottom-nav-height, 88px) + var(--safe-area-inset-bottom, 0px)
+  );
   box-sizing: border-box;
   width: 100%;
   max-width: 800px;

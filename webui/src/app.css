@@ -284,12 +284,13 @@ button:active {
   pointer-events: auto;
 }
 
-
 .bottom-actions-root {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(var(--bottom-nav-height, 88px) + env(safe-area-inset-bottom, 0px));
+  bottom: calc(
+    var(--bottom-nav-height, 88px) + env(safe-area-inset-bottom, 0px)
+  );
   display: flex;
   align-items: center;
   padding: 0 16px;
