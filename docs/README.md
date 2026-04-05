@@ -4,12 +4,20 @@
 
 [![Telegram][telegram-badge]][telegram-url]
 
+[![Version][version-badge]][version-url]
+[![GitHub Downloads][download-badge]][download-url]
+
+
 [English](README_en.md) [Русский](README_ru.md)
 
 </div>
 
 [telegram-badge]: https://img.shields.io/badge/Group-blue?style=for-the-badge&logo=telegram&label=Telegram
 [telegram-url]: https://t.me/mmrs_ci
+[version-badge]: https://img.shields.io/github/v/release/Tools-cx-app/meta-magic_mount-rs?logo=github
+[version-url]: https://github.com/Tools-cx-app/meta-magic_mount-rs/releases/latest
+[download-badge]: https://img.shields.io/github/downloads/Tools-cx-app/meta-magic_mount-rs/total?logo=github&logoColor=green
+[download-url]: https://github.com/Tools-cx-app/meta-magic_mount-rs/releases/
 
 为 KernelSU 提供 Systemless 修改功能。
 
