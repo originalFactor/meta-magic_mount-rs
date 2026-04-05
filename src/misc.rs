@@ -41,9 +41,7 @@ fn init_list() {
 }
 
 pub fn pre_init() {
-    if std::env::var("KSU_LATE_LOAD").is_ok() && std::env::var("KSU").is_ok() {
-        panic!("! unsupported late load mode");
-    }
+    assert!(!(std::env::var("KSU_LATE_LOAD").is_ok() && std::env::var("KSU").is_ok()), "! unsupported late load mode");
     init_logger();
     init_list();
 }

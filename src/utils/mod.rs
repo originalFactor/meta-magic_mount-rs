@@ -91,7 +91,7 @@ where
 }
 
 pub fn update_desc() -> Result<()> {
-    let text = format!("[😋 Mounted!!]\\nAn implementation of a metamodule using Magic Mount.",);
+    let text = "[😋 Mounted!!]\\nAn implementation of a metamodule using Magic Mount.".to_string();
 
     let prop = fs::read_to_string(defs::MODULE_PROP)?;
     let mut temp = tempfile::Builder::new().tempfile()?;
