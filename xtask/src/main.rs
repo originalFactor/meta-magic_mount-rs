@@ -10,6 +10,7 @@ use std::{
 };
 
 use anyhow::Result;
+use clap::{Parser, Subcommand};
 use fs_extra::{dir, file};
 use serde::{Deserialize, Serialize};
 use zip::{CompressionMethod, write::FileOptions};
@@ -36,17 +37,72 @@ struct UpdateJson {
     changelog: String,
 }
 
+#[derive(Parser)]
+#[command(version, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Check the build of mmrs
+    Check {
+        /// Print detailed output (default: false)
+        #[clap(short, long, default_value = "false")]
+        verbose: bool,
+    },
+
+    /// Build mmrs
+    Build {
+        /// Print detailed output (default: false)
+        #[clap(short, long, default_value = "false")]
+        verbose: bool,
+    },
+
+    /// Clean build artifacts
+    Clean,
+
+    /// Format source code
+    Format {
+        /// Print detailed output (default: false)
+        #[clap(short, long, default_value = "false")]
+        verbose: bool,
+    },
+
+    /// Run the Clippy linter
+    Lint {
+        /// Automatically fix lint issues (default: false)
+        #[clap(short, long, default_value = "false")]
+        fix: bool,
+    },
+
+    /// Update versionCode/url in update/update.json
+    Update,
+}
+
 fn main() -> Result<()> {
-    let args: Vec<_> = std::env::args().collect();
+    let cli = Cli::parse();
 
-    if args.len() == 1 {
-        return Ok(());
-    }
-
-    match args[1].as_str() {
-        "build" | "b" => build()?,
-        "update" | "u" => update()?,
-        _ => {}
+    match cli.command {
+        Commands::Check { verbose } => {
+            check(verbose)?;
+        }
+        Commands::Build { verbose } => {
+            build(verbose)?;
+        }
+        Commands::Clean => {
+            clean()?;
+        }
+        Commands::Format { verbose } => {
+            format(verbose)?;
+        }
+        Commands::Lint { fix } => {
+            lint(fix)?;
+        }
+        Commands::Update => {
+            update()?;
+        }
     }
 
     Ok(())
@@ -91,7 +147,57 @@ fn update() -> Result<()> {
     Ok(())
 }
 
-fn build() -> Result<()> {
+fn check(verbose: bool) -> Result<()> {
+    let mut cargo = cargo_ndk();
+    cargo.args(["check", "-Z", "build-std", "-Z", "trim-paths"]);
+    cargo.env("RUSTFLAGS", "-C default-linker-libraries");
+
+    if verbose {
+        cargo.arg("--verbose");
+    }
+
+    cargo.spawn()?.wait()?;
+
+    Ok(())
+}
+
+fn clean() -> Result<()> {
+    let temp_dir = temp_dir();
+    let _ = fs::remove_dir_all(&temp_dir);
+
+    Command::new("cargo").arg("clean").spawn()?.wait()?;
+
+    Ok(())
+}
+
+fn lint(fix: bool) -> Result<()> {
+    let command_builder = |fix: bool| {
+        let mut command = cargo_ndk();
+        command.arg("clippy");
+        if fix {
+            command.args(["--fix", "--allow-dirty", "--allow-staged", "--all"]);
+        }
+        command
+    };
+
+    command_builder(fix).spawn()?.wait()?;
+    command_builder(fix).arg("--release").spawn()?.wait()?;
+
+    Ok(())
+}
+
+fn format(verbose: bool) -> Result<()> {
+    let mut command = Command::new("cargo");
+    command.args(["fmt", "--all"]);
+    if verbose {
+        command.arg("--verbose");
+    }
+    command.spawn()?.wait()?;
+
+    Ok(())
+}
+
+fn build(verbose: bool) -> Result<()> {
     let temp_dir = temp_dir();
     let toml = fs::read_to_string("Cargo.toml")?;
     let data: CargoConfig = toml::from_str(&toml)?;
@@ -103,6 +209,10 @@ fn build() -> Result<()> {
 
     let mut cargo = cargo_ndk();
     let args = vec!["build", "-Z", "build-std", "-r"];
+
+    if verbose {
+        cargo.arg("--verbose");
+    }
 
     cargo.args(args);
 
