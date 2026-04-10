@@ -11,11 +11,13 @@ New push to Github
 {commit_message}
 ```
 See commit detail [here]({commit_url})
-#ci_{run_id}
+[#ci_{run_no}](https://github.com/{github_repository}/actions/runs/{run_id})
 """.strip()
 GH_BASE_URL = "https://api.github.com/repos/"
 GH_CI_WORKFLOW_NAME = "ci-build"
 GH_CI_DIST_PATTERN = "./output/*.zip"
+COMMIT_TITLE_MAX_LEN: int = 64
+COMMIT_BODY_MAX_LEN: int = 128
 
 
 # Standard imports
@@ -25,6 +27,7 @@ from glob import glob
 from logging import basicConfig, getLogger
 from pathlib import Path
 from typing import cast
+from textwrap import shorten
 
 # Third-party imports
 from telethon import TelegramClient
@@ -47,6 +50,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=Path(__file__).parent / ".env")
     bot_token: str
     chat_id: int
+    run_no: int
     run_id: int
     bot_ci_session: str | None = None
     github_repository: str
@@ -154,6 +158,25 @@ async def compare_commit(base: str, head: str, page: int = 1) -> dict:
     return await github_api(endpoint=f"/compare/{base}...{head}", params={"page": page})
 
 
+def parse_commit_message(msg: str) -> str:
+    """
+    Parse commit message to avoid too long message.
+
+    Args:
+        msg: Commit message
+
+    Returns:
+        Parsed commit message
+    """
+    msg = msg + "\n\n"
+    title, body = msg.split("\n\n", 1)
+    title = shorten(title, COMMIT_TITLE_MAX_LEN, placeholder="...")
+    body = shorten(body, COMMIT_BODY_MAX_LEN, placeholder="...")
+    if not body:
+        return title
+    return f"{title}\n\n{body}"
+
+
 async def generate_history(base: str, head: str) -> tuple[str, str]:
     """
     Generate commit history between two commits.
@@ -176,7 +199,7 @@ async def generate_history(base: str, head: str) -> tuple[str, str]:
         for commit in data["commits"]:
             len_msgs = len(msg)
             proceed_commits += 1
-            msg += f"{commit['commit']['message']}\n\n"
+            msg += f"{parse_commit_message(commit['commit']['message'])}\n\n"
             if len(msg) >= 512:
                 msg = msg[:len_msgs]
                 proceed_commits -= 1
@@ -210,7 +233,9 @@ async def generate_msg() -> str:
     message = TG_MSG_TEMPLATE.format(
         commit_message=history_msg.strip(),
         commit_url=commit_url,
+        run_no=settings.run_no,
         run_id=settings.run_id,
+        github_repository=settings.github_repository,
     )
     logger.info("Generated Telegram message")
     return message
