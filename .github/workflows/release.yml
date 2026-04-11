@@ -59,7 +59,7 @@ jobs:
         run: |
           export ANDROID_NDK_HOME=$(realpath ~/ndk_temp)
           export ANDROID_NDK_ROOT=$ANDROID_NDK_HOME
-          cargo xtask b
+          cargo xtask build
       - name: Prepare artifacts
         run: |
           mkdir -p output/artifact/
