@@ -1,9 +1,9 @@
 // Copyright 2025 Magic Mount-rs Authors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use std::{collections::HashSet, fmt, fs};
+use std::{fmt, fs};
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{Context, Result, anyhow, bail};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -192,7 +192,7 @@ pub fn handle_show_config() -> Result<()> {
         .get()
         .unwrap()
         .clone()
-        .unwrap_or(HashSet::new())
+        .unwrap_or_default()
         .iter()
         .cloned()
         .collect();
