@@ -3,8 +3,9 @@
 
 use std::{fmt, fs};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow, bail};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 use crate::defs::{CONFIG_FILE, IGNORE_LIST_PATH, MODULE_PATH};
 
@@ -102,7 +103,7 @@ impl Config {
         }
     }
 
-    pub fn save(&self) -> Result<()> {
+    fn save(&self) -> Result<()> {
         let content = toml::to_string_pretty(self).context("failed to serialize config to toml")?;
 
         if let Some(parent) = std::path::Path::new(CONFIG_FILE).parent() {
@@ -113,7 +114,7 @@ impl Config {
         Ok(())
     }
 
-    pub fn read_ignore_list() -> Result<Vec<String>> {
+    fn read_ignore_list() -> Result<Vec<String>> {
         let content = match fs::read_to_string(IGNORE_LIST_PATH) {
             Ok(content) => content,
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
@@ -128,7 +129,7 @@ impl Config {
             .collect())
     }
 
-    pub fn write_ignore_list(ignore_list: &[String]) -> Result<()> {
+    fn write_ignore_list(ignore_list: &[String]) -> Result<()> {
         if let Some(parent) = std::path::Path::new(IGNORE_LIST_PATH).parent() {
             fs::create_dir_all(parent).context("failed to create ignore list directory")?;
         }
@@ -142,7 +143,7 @@ impl Config {
         Ok(())
     }
 
-    pub fn into_api(self, ignore_list: Vec<String>) -> ApiConfig {
+    fn into_api(self, ignore_list: Vec<String>) -> ApiConfig {
         let umount_enabled = self.umount_enabled();
 
         ApiConfig {
@@ -155,7 +156,7 @@ impl Config {
         }
     }
 
-    pub fn apply_api_payload(&mut self, payload: ApiConfigPayload) {
+    fn apply_api_payload(&mut self, payload: ApiConfigPayload) {
         if let Some(mountsource) = payload.mountsource {
             self.mountsource = mountsource;
         }
@@ -170,4 +171,63 @@ impl Config {
             self.set_umount_enabled(!disable_umount);
         }
     }
+}
+
+pub fn decode_hex(input: &str) -> Result<Vec<u8>> {
+    if !input.len().is_multiple_of(2) {
+        bail!("hex payload must contain an even number of characters");
+    }
+
+    let mut bytes = Vec::with_capacity(input.len() / 2);
+    for chunk in input.as_bytes().chunks_exact(2) {
+        let hex = std::str::from_utf8(chunk).context("hex payload is not valid utf-8")?;
+        let byte = u8::from_str_radix(hex, 16)
+            .with_context(|| format!("invalid hex byte '{hex}' in payload"))?;
+        bytes.push(byte);
+    }
+
+    Ok(bytes)
+}
+
+pub fn parse_payload_arg(args: &[String]) -> Result<&str> {
+    let payload = args
+        .windows(2)
+        .find_map(|window| (window[0] == "--payload").then_some(window[1].as_str()))
+        .ok_or_else(|| anyhow!("missing required --payload argument"))?;
+
+    Ok(payload)
+}
+
+pub fn handle_show_config() -> Result<()> {
+    let config = Config::load_or_default();
+    let ignore_list = Config::read_ignore_list()?;
+    println!("{}", serde_json::to_string(&config.into_api(ignore_list))?);
+    Ok(())
+}
+
+pub fn handle_save_config(args: &[String]) -> Result<()> {
+    let payload_hex = parse_payload_arg(args)?;
+    let payload_json = String::from_utf8(decode_hex(payload_hex)?)
+        .context("decoded payload is not valid utf-8")?;
+    let payload: ApiConfigPayload =
+        serde_json::from_str(&payload_json).context("failed to parse config payload json")?;
+
+    let ignore_list = payload.ignore_list.clone();
+    let mut config = Config::load_or_default();
+    config.apply_api_payload(payload);
+    config.save()?;
+    if let Some(ignore_list) = ignore_list {
+        Config::write_ignore_list(&ignore_list)?;
+    }
+
+    println!("{}", json!({ "ok": true }));
+    Ok(())
+}
+
+pub fn handle_gen_config() -> Result<()> {
+    let config = Config::default();
+    config.save()?;
+    Config::write_ignore_list(&[])?;
+    println!("{}", json!({ "ok": true }));
+    Ok(())
 }

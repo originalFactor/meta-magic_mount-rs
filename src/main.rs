@@ -12,77 +12,17 @@ mod utils;
 
 use std::path::Path;
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::Result;
 use mimalloc::MiMalloc;
 use rustix::mount::{MountFlags, mount};
-use serde_json::json;
 
 use crate::{
-    config::{ApiConfigPayload, Config},
+    config::{Config, handle_gen_config, handle_save_config, handle_show_config},
     defs::MODULE_PATH,
 };
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
-
-fn decode_hex(input: &str) -> Result<Vec<u8>> {
-    if !input.len().is_multiple_of(2) {
-        bail!("hex payload must contain an even number of characters");
-    }
-
-    let mut bytes = Vec::with_capacity(input.len() / 2);
-    for chunk in input.as_bytes().chunks_exact(2) {
-        let hex = std::str::from_utf8(chunk).context("hex payload is not valid utf-8")?;
-        let byte = u8::from_str_radix(hex, 16)
-            .with_context(|| format!("invalid hex byte '{hex}' in payload"))?;
-        bytes.push(byte);
-    }
-
-    Ok(bytes)
-}
-
-fn parse_payload_arg(args: &[String]) -> Result<&str> {
-    let payload = args
-        .windows(2)
-        .find_map(|window| (window[0] == "--payload").then_some(window[1].as_str()))
-        .ok_or_else(|| anyhow!("missing required --payload argument"))?;
-
-    Ok(payload)
-}
-
-fn handle_show_config() -> Result<()> {
-    let config = Config::load_or_default();
-    let ignore_list = Config::read_ignore_list()?;
-    println!("{}", serde_json::to_string(&config.into_api(ignore_list))?);
-    Ok(())
-}
-
-fn handle_save_config(args: &[String]) -> Result<()> {
-    let payload_hex = parse_payload_arg(args)?;
-    let payload_json = String::from_utf8(decode_hex(payload_hex)?)
-        .context("decoded payload is not valid utf-8")?;
-    let payload: ApiConfigPayload =
-        serde_json::from_str(&payload_json).context("failed to parse config payload json")?;
-
-    let ignore_list = payload.ignore_list.clone();
-    let mut config = Config::load_or_default();
-    config.apply_api_payload(payload);
-    config.save()?;
-    if let Some(ignore_list) = ignore_list {
-        Config::write_ignore_list(&ignore_list)?;
-    }
-
-    println!("{}", json!({ "ok": true }));
-    Ok(())
-}
-
-fn handle_gen_config() -> Result<()> {
-    let config = Config::default();
-    config.save()?;
-    Config::write_ignore_list(&[])?;
-    println!("{}", json!({ "ok": true }));
-    Ok(())
-}
 
 fn main() -> Result<()> {
     misc::pre_init();
