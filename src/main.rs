@@ -56,8 +56,6 @@ fn main() -> Result<()> {
 
     let config = Config::load()?;
 
-    utils::ksucalls::check_ksu();
-
     log::info!("Magic Mount Starting");
     log::info!("config info:\n{config}");
 
