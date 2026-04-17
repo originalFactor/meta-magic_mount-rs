@@ -137,8 +137,11 @@ impl Node {
     {
         let list = IGNORE_LIST.get().unwrap();
         if let Some(f) = list
-            && f.iter()
-                .any(|s| s == path.as_ref().to_str().unwrap_or_default())
+            && f.iter().any(|s| {
+                glob::Pattern::new(&s)
+                    .unwrap_or_default()
+                    .matches(path.as_ref().to_str().unwrap_or_default())
+            })
         {
             return true;
         }
