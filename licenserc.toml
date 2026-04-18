@@ -14,21 +14,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-name: Manage License Headers
+headerPath = "LICENCE_HEADER"
 
-on:
-  push:
-    branches: ["master"]
-  pull_request:
-    branches: ["master"]
-
-jobs:
-  license-check:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Run HawkEye License Check
-        uses: korandoru/hawkeye@v6
+[properties]
+year = 2026
+owner = "Tools-cx-app <localhost.hutao@gmail.com>"
