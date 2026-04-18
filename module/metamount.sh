@@ -12,11 +12,7 @@ if [ ! -f "$BINARY" ]; then
   exit 1
 fi
 
-if [ -f "/data/adb/magic_mount/mm.log" ]; then
-  mv "/data/adb/magic_mount/mm.log" "/data/adb/magic_mount/mm.log.bak"
-fi
-
-nohup $BINARY >"/data/adb/magic_mount/mm.log" 2>&1
+nohup $BINARY 2>&1
 
 EXIT_CODE=$?
 
