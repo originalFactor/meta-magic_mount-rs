@@ -19,11 +19,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::Context;
 use extattr::{Flags as XattrFlags, lgetxattr, lsetxattr};
 use regex_lite::Regex;
 
-use crate::defs;
+use crate::{
+    defs,
+    errors::{Error, Result},
+};
 
 /// Validate `module_id` format and security
 /// Module ID must match: ^[a-zA-Z][a-zA-Z0-9._-]+$
@@ -35,9 +38,9 @@ pub fn validate_module_id(module_id: &str) -> Result<()> {
     if re.is_match(module_id) {
         Ok(())
     } else {
-        Err(anyhow!(
-            "Invalid module ID: '{module_id}'. Must match /^[a-zA-Z][a-zA-Z0-9._-]+$/"
-        ))
+        Err(Error::InvalidModuleID {
+            module_id: module_id.to_string(),
+        })
     }
 }
 
@@ -84,7 +87,9 @@ where
     if dir.as_ref().is_dir() && result.is_ok() {
         Ok(())
     } else {
-        bail!("{} is not a regular directory", dir.as_ref().display())
+        Err(Error::RegularDirectory {
+            path: dir.as_ref().display().to_string(),
+        })
     }
 }
 

@@ -17,6 +17,7 @@
 
 mod config;
 mod defs;
+mod errors;
 mod magic_mount;
 mod misc;
 mod scanner;
@@ -24,12 +25,12 @@ mod utils;
 
 use std::path::Path;
 
-use anyhow::Result;
 use rustix::mount::{MountFlags, mount};
 
 use crate::{
     config::{Config, handle_gen_config, handle_save_config, handle_show_config},
     defs::MODULE_PATH,
+    errors::Result,
     misc::cleanup,
 };
 
@@ -108,11 +109,12 @@ fn main() -> Result<()> {
         }
         Err(e) => {
             log::error!("Magic Mount Failed");
+            let e = anyhow::Error::from(e);
             for cause in e.chain() {
                 log::error!("{cause:#?}");
             }
             log::error!("{:#?}", e.backtrace());
-            Err(e)
+            Err(e.into())
         }
     }
 }

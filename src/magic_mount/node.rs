@@ -21,11 +21,10 @@ use std::{
     sync::OnceLock,
 };
 
-use anyhow::Result;
 use extattr::lgetxattr;
 use rustix::path::Arg;
 
-use crate::defs;
+use crate::{defs, errors::Result};
 
 pub static IGNORE_LIST: OnceLock<Option<HashSet<String>>> = OnceLock::new();
 

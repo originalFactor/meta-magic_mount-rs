@@ -21,12 +21,13 @@ use std::{
     sync::atomic::AtomicU32,
 };
 
-use anyhow::{Context, Result, bail};
+use anyhow::Context;
 use rustix::mount::{
     MountFlags, MountPropagationFlags, mount, mount_bind, mount_change, mount_move, mount_remount,
 };
 
 use crate::{
+    errors::{Error, Result},
     magic_mount::{
         node::{Node, NodeFileType},
         utils::{clone_symlink, collect_module_files, mount_mirror},
@@ -95,7 +96,9 @@ impl MagicMount {
             MOUNTDED_SYMBOLS_FILES.store(mounted, std::sync::atomic::Ordering::Relaxed);
             Ok(())
         } else {
-            bail!("cannot mount root symlink {}!", self.path.display());
+            Err(Error::MountRootSymlink {
+                path: self.path.display().to_string(),
+            })
         }
     }
 
@@ -108,7 +111,9 @@ impl MagicMount {
         };
 
         if self.node.module_path.is_none() {
-            bail!("cannot mount root file {}!", self.path.display());
+            return Err(Error::MountRootFile {
+                path: self.path.display().to_string(),
+            });
         }
 
         let module_path = &self.node.module_path.clone().unwrap();
@@ -201,10 +206,9 @@ impl MagicMount {
 
         if self.node.replace {
             if self.node.module_path.is_none() {
-                bail!(
-                    "dir {} is declared as replaced but it is root!",
-                    self.path.display()
-                );
+                return Err(Error::DirDeclared {
+                    path: self.path.display().to_string(),
+                });
             }
 
             log::debug!("dir {} is replaced", self.path.display());
@@ -228,7 +232,7 @@ impl MagicMount {
             .with_context(|| format!("magic mount {}/{name}", self.path.display()))
             {
                 if has_tmpfs {
-                    return Err(e);
+                    return Err(e.into());
                 }
 
                 log::error!("mount child {}/{name} failed: {e:#?}", self.path.display());
@@ -299,7 +303,7 @@ impl MagicMount {
 
             if let Err(e) = result {
                 if has_tmpfs {
-                    return Err(e);
+                    return Err(e.into());
                 }
                 log::error!("mount child {}/{name} failed: {e:#?}", self.path.display());
             }

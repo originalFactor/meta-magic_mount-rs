@@ -17,8 +17,9 @@ use std::{
     sync::{LazyLock, Mutex, atomic::AtomicBool},
 };
 
-use anyhow::Result;
 use ksu::{TryUmount, TryUmountFlags};
+
+use crate::errors::Result;
 
 static KSU: AtomicBool = AtomicBool::new(false);
 static FLAG: AtomicBool = AtomicBool::new(false);

@@ -14,11 +14,15 @@
 
 use std::{fmt, fs};
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::{defs, magic_mount::node::IGNORE_LIST};
+use crate::{
+    defs,
+    errors::{Error, Result},
+    magic_mount::node::IGNORE_LIST,
+};
 
 #[derive(Debug, Serialize)]
 pub struct ApiConfig {
@@ -160,7 +164,7 @@ impl Config {
 
 pub fn decode_hex(input: &str) -> Result<Vec<u8>> {
     if !input.len().is_multiple_of(2) {
-        bail!("hex payload must contain an even number of characters");
+        return Err(Error::PayloadContain);
     }
 
     let mut bytes = Vec::with_capacity(input.len() / 2);
@@ -178,7 +182,7 @@ pub fn parse_payload_arg(args: &[String]) -> Result<&str> {
     let payload = args
         .windows(2)
         .find_map(|window| (window[0] == "--payload").then_some(window[1].as_str()))
-        .ok_or_else(|| anyhow!("missing required --payload argument"))?;
+        .ok_or_else(|| Error::MissingArgment)?;
 
     Ok(payload)
 }

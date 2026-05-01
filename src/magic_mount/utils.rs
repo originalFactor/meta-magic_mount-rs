@@ -18,7 +18,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{Result, bail};
 use rustix::{
     fs::{Gid, Mode, Uid, chmod, chown},
     mount::mount_bind,
@@ -26,6 +25,7 @@ use rustix::{
 
 use crate::{
     defs,
+    errors::{Error, Result},
     magic_mount::node::Node,
     utils::{lgetfilecon, lsetfilecon, validate_module_id},
 };
@@ -40,7 +40,9 @@ where
     } else if let Some(module_path) = &node.module_path {
         Ok((module_path.metadata()?, module_path.clone()))
     } else {
-        bail!("cannot mount root dir {}!", path.display());
+        Err(Error::MountRootFile {
+            path: path.display().to_string(),
+        })
     }
 }
 
